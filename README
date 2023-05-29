@@ -1,0 +1,2 @@
+Web server listening on port XXXX for a .so file and saves it into /tmp/dynplug/name.so. Then communicates via named pipe to dynplug the path of the so file.
+
