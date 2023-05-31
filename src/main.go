@@ -29,6 +29,7 @@ import (
     "syscall"
 )
 
+const address = ":10001"
 const pipename = "dynplug_magicpipe"
 var pipepath string
 
@@ -44,13 +45,10 @@ func main() {
         }
     }
 
-    server := http.Server{
-        Handler: http.HandlerFunc(handler),
-        Addr: ":10001",
-    }
+    http.HandleFunc("/", handler)
 
     log.Println("Starting dynplug_server")
-    log.Println(server.ListenAndServe())
+    log.Println(http.ListenAndServeTLS(address, "../keys/localhost.crt", "../keys/localhost.key", nil))
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -72,18 +70,19 @@ func handleFileInForm(w http.ResponseWriter, r *http.Request) {
 
     outFile, err := os.CreateTemp("", "dynplug")
     if err != nil {
-        log.Println("Error creating tmp file on disk", err)
-        unsuccess(w)
+        errmsg := "Error creating tmp file on disk: " + err.Error()
+        log.Println(errmsg)
+        unsuccess(w, errmsg)
         return
     }
 
     log.Println("Writing " + outFile.Name());
 
-    //written, err := io.Copy(outFile, f)
     outFile.Write(data)
     if err != nil {
-        log.Println("copy error", err)
-        unsuccess(w)
+        errmsg := "Copy error: " + err.Error()
+        log.Println(errmsg)
+        unsuccess(w, errmsg)
         return
     }
 
@@ -103,7 +102,7 @@ func success(w http.ResponseWriter) {
     w.Write([]byte("Got your file\n"))
 }
 
-func unsuccess(w http.ResponseWriter) {
+func unsuccess(w http.ResponseWriter, msg string) {
     w.WriteHeader(500)
-    w.Write([]byte("Something went wrong\n"))
+    w.Write([]byte("Error: " + msg))
 }
